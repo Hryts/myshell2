@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 extern int __thread merrno_num;
 

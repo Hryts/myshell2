@@ -52,11 +52,12 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
 
         // if pipes are used - set up descriptors and check if command is a built-in
         if (!(left.first == -1 && right.first == -1)) {
-            std::cout << "\nJERE\n";
             auto[pipe_in_left, pipe_out_left] = left;
             auto[pipe_in_right, pipe_out_right] = right;
 
             if (pipe_in_left >= 0) {
+                std::cout << "\nJERE\n";
+
                 if (dup2(pipe_in_left, STDIN_FILENO) == -1) {
                     std::cerr << "Dup2 stdin with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
@@ -103,10 +104,11 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
         std::vector<const char *> arg_for_c;
         arg_for_c.reserve(args.size() + 1);
 
-        for (const auto &s: args)
-            arg_for_c.push_back(s.c_str());
-        arg_for_c.push_back(nullptr);
+        for (const auto &s: args) {
+            std::cout << s << "\n";
 
+            arg_for_c.push_back(s.c_str()); }
+        arg_for_c.push_back(nullptr);
         execvp(victim.c_str(), const_cast<char *const *>(arg_for_c.data()));
 
         std::cerr << victim << ": command not found " << std::endl;

@@ -44,9 +44,10 @@ int main(int argc, char **argv) {
             if (close(pipes[i].first) == -1 || close(pipes[i].second == -1))
                 exit(EXIT_FAILURE);
 
-        for (int i = 0; i < args.size(); ++i)
-            if (status != 0 && wait(&status) == -1)
-                exit(EXIT_FAILURE);
+        if (status == 1)
+            for (int i = 0; i < args.size(); ++i)
+                if (wait(&status) == -1)
+                    exit(EXIT_FAILURE);
 
         merrno_num = status;
         args.clear();

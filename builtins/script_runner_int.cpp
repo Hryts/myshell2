@@ -7,6 +7,7 @@
 #include <iostream>
 #include "../headers/parsers.h"
 #include "../headers/utils.h"
+#include <sys/wait.h>
 
 int script_runner(const std::vector<std::string> &args, bool bHelp) {
     if (bHelp) {
@@ -27,16 +28,29 @@ int script_runner(const std::vector<std::string> &args, bool bHelp) {
         return -1;
     }
     std::string line;
-    std::vector<std::string> arg_sh;
+    std::vector<std::vector<std::string>> arg_sh;
+    std::vector<std::pair<int, int>> pipes;
     int status;
 
     while (getline(script, line)) {
         if (line.empty() || line[0] == '#')
             continue;
-        parse_input(line.c_str(), arg_sh);
-        if (!arg_sh.empty())
-            status = launch(arg_sh);
+        parse_input(line.c_str(), arg_sh, pipes);
+        if (!arg_sh.empty()) {
+            for (int i = 0; i < arg_sh.size(); ++i) {
+                launch(arg_sh[i], pipes[i], pipes[i + 1]);
+            }
+        }
+        for (int i = 1; i < pipes.size() - 1; ++i)
+            if (close(pipes[i].first) == -1 || close(pipes[i].second == -1))
+                exit(EXIT_FAILURE);
+
+        for (int i = 0; i < args.size(); ++i)
+            if (wait(&status) == -1)
+                exit(EXIT_FAILURE);
+
         arg_sh.clear();
+        pipes.clear();
     }
     script.close();
     return status;

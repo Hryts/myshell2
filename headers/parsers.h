@@ -9,7 +9,7 @@
 #include <vector>
 #include <ctype.h>
 
-void parse_input(const char* inp,  std::vector<std::string> &args);
-
+void
+parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes);
 
 #endif //MYSHELL_PARSERS_H

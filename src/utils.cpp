@@ -29,16 +29,18 @@ static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &a
     return std::make_pair(false, 0);
 }
 
-int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes) {
+int launch(std::vector<std::string> &args, const std::pair<int, int> &left, const std::pair<int, int> &right) {
 
     int status;
     bool builtin;
 
     // use built-in in current process only if no pipes are used
-    if (pipes.empty()) {
+    if (left.first == -1 && right.first == -1) {
         std::tie(builtin, status) = check_for_builtins(args);
-        if (builtin)
-            return status;
+        if (builtin) {
+            merrno_num = status;
+            return 0;
+        }
     }
 
     pid_t pid = fork();
@@ -46,16 +48,13 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
     if (pid == -1) {
         std::cerr << "Failed to fork()" << std::endl;
         exit(EXIT_FAILURE);
-    } else if (pid > 0) {
-        waitpid(pid, &status, 0);
-        merrno_num = status;
-    } else {
+    } else if (pid == 0) {
 
         // if pipes are used - set up descriptors and check if command is a built-in
-        if (!pipes.empty()) {
-
-            auto[pipe_in_left, pipe_out_left] = pipes[0];
-            auto[pipe_in_right, pipe_out_right] = pipes[1];
+        if (!(left.first == -1 && right.first == -1)) {
+            std::cout << "\nJERE\n";
+            auto[pipe_in_left, pipe_out_left] = left;
+            auto[pipe_in_right, pipe_out_right] = right;
 
             if (pipe_in_left >= 0) {
                 if (dup2(pipe_in_left, STDIN_FILENO) == -1) {
@@ -72,6 +71,8 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
                 }
             }
             if (pipe_out_right >= 0) {
+                std::cout << "\nJERE2\n";
+
                 if (dup2(pipe_out_right, STDOUT_FILENO) == -1) {
                     std::cerr << "Dup2 stdout with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
@@ -112,8 +113,7 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
         exit(errno);
 
     }
-
-    return status;
+    return 1;
 }
 
 void setup_path() {

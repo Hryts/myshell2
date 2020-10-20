@@ -30,7 +30,6 @@ static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &a
 }
 
 int launch(std::vector<std::string> &args, const std::pair<int, int> &left, const std::pair<int, int> &right) {
-
     int status;
     bool builtin;
 
@@ -54,10 +53,7 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
         if (!(left.first == -1 && right.first == -1)) {
             auto[pipe_in_left, pipe_out_left] = left;
             auto[pipe_in_right, pipe_out_right] = right;
-
             if (pipe_in_left >= 0) {
-                std::cout << "\nJERE\n";
-
                 if (dup2(pipe_in_left, STDIN_FILENO) == -1) {
                     std::cerr << "Dup2 stdin with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
@@ -70,10 +66,9 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
                     std::cerr << "Closing pipe out with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
                 }
+
             }
             if (pipe_out_right >= 0) {
-                std::cout << "\nJERE2\n";
-
                 if (dup2(pipe_out_right, STDOUT_FILENO) == -1) {
                     std::cerr << "Dup2 stdout with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
@@ -86,6 +81,7 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
                     std::cerr << "Closing pipe out with pid = " << pid << std::endl;
                     exit(EXIT_FAILURE);
                 }
+
             }
 
             std::tie(builtin, status) = check_for_builtins(args);
@@ -104,10 +100,8 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
         std::vector<const char *> arg_for_c;
         arg_for_c.reserve(args.size() + 1);
 
-        for (const auto &s: args) {
-            std::cout << s << "\n";
-
-            arg_for_c.push_back(s.c_str()); }
+        for (const auto &s: args)
+            arg_for_c.push_back(s.c_str());
         arg_for_c.push_back(nullptr);
         execvp(victim.c_str(), const_cast<char *const *>(arg_for_c.data()));
 

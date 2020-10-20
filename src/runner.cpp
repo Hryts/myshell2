@@ -40,9 +40,13 @@ int main(int argc, char **argv) {
                 status = launch(args[i], pipes[i], pipes[i + 1]);
             }
         }
-        for (int i = 1; i < pipes.size() - 1; ++i)
-            if (close(pipes[i].first) == -1 || close(pipes[i].second == -1))
+        for (int i = 1; i < pipes.size() - 1; ++i) {
+            if (close(pipes[i].first) == -1)
                 exit(EXIT_FAILURE);
+            if (close(pipes[i].second) == -1)
+                exit(EXIT_FAILURE);
+        }
+
 
         if (status == 1)
             for (int i = 0; i < args.size(); ++i)

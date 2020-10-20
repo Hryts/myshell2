@@ -51,7 +51,6 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
         wildcard(to_put, temp);
     // create pipes
 
-    pipes.emplace_back(-1, -1);
 
     if (!temp.empty()) {
         args.push_back(std::move(temp));
@@ -64,6 +63,4 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
             pipes.emplace_back(pfd[0], pfd[1]);
         }
     }
-
-    pipes.emplace_back(-1, -1);
 }

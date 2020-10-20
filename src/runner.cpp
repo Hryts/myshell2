@@ -26,6 +26,7 @@ int main(int argc, char **argv) {
     std::vector<std::vector<std::string>> args;
     std::vector<std::pair<int, int>> pipes;
     int status;
+    std::vector<int> statuses;
     while (true) {
         if (getcwd(cwd, sizeof(cwd)) == nullptr) {
             return 1;
@@ -37,25 +38,28 @@ int main(int argc, char **argv) {
         parse_input(input, args, pipes);
         if (!args.empty()) {
             for (int i = 0; i < args.size(); ++i) {
-                status = launch(args[i], pipes[i], pipes[i + 1]);
+                status = launch(args[i], pipes, i);
+                statuses.emplace_back(status);
             }
         }
-        for (int i = 1; i < pipes.size() - 1; ++i) {
-            if (close(pipes[i].first) == -1)
+        for (auto & pipe : pipes) {
+            if (close(pipe.first) == -1)
                 exit(EXIT_FAILURE);
-            if (close(pipes[i].second) == -1)
+            if (close(pipe.second) == -1)
                 exit(EXIT_FAILURE);
         }
 
 
-        if (status == 1)
-            for (int i = 0; i < args.size(); ++i)
-                if (wait(&status) == -1)
+        if (status != 0)
+            for (int st : statuses) {
+                if (waitpid(st, &status, 0) == -1)
                     exit(EXIT_FAILURE);
+            }
 
         merrno_num = status;
         args.clear();
         pipes.clear();
+        statuses.clear();
         free(input);
     }
 }

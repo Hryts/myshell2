@@ -31,26 +31,35 @@ int script_runner(const std::vector<std::string> &args, bool bHelp) {
     std::vector<std::vector<std::string>> arg_sh;
     std::vector<std::pair<int, int>> pipes;
     int status;
+    std::vector<int> statuses;
 
     while (getline(script, line)) {
         if (line.empty() || line[0] == '#')
             continue;
         parse_input(line.c_str(), arg_sh, pipes);
         if (!arg_sh.empty()) {
-            for (int i = 0; i < arg_sh.size(); ++i) {
-                launch(arg_sh[i], pipes[i], pipes[i + 1]);
+            for (int i = 0; i < args.size(); ++i) {
+                status = launch(arg_sh[i], pipes, i);
+                statuses.emplace_back(status);
             }
         }
-        for (int i = 1; i < pipes.size() - 1; ++i)
-            if (close(pipes[i].first) == -1 || close(pipes[i].second == -1))
+        for (auto & pipe : pipes) {
+            if (close(pipe.first) == -1)
                 exit(EXIT_FAILURE);
+            if (close(pipe.second) == -1)
+                exit(EXIT_FAILURE);
+        }
 
-        for (int i = 0; i < args.size(); ++i)
-            if (wait(&status) == -1)
-                exit(EXIT_FAILURE);
+
+        if (status != 0)
+            for (int st : statuses) {
+                if (waitpid(st, &status, 0) == -1)
+                    exit(EXIT_FAILURE);
+            }
 
         arg_sh.clear();
         pipes.clear();
+        statuses.clear();
     }
     script.close();
     return status;

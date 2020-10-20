@@ -29,12 +29,11 @@ static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &a
     return std::make_pair(false, 0);
 }
 
-int launch(std::vector<std::string> &args, const std::pair<int, int> &left, const std::pair<int, int> &right) {
+int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
     int status;
     bool builtin;
-
     // use built-in in current process only if no pipes are used
-    if (left.first == -1 && right.first == -1) {
+    if (pipes.empty()) {
         std::tie(builtin, status) = check_for_builtins(args);
         if (builtin) {
             merrno_num = status;
@@ -50,38 +49,33 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
     } else if (pid == 0) {
 
         // if pipes are used - set up descriptors and check if command is a built-in
-        if (!(left.first == -1 && right.first == -1)) {
-            auto[pipe_in_left, pipe_out_left] = left;
-            auto[pipe_in_right, pipe_out_right] = right;
-            if (pipe_in_left >= 0) {
-                if (dup2(pipe_in_left, STDIN_FILENO) == -1) {
-                    std::cerr << "Dup2 stdin with pid = " << pid << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                if ((close(pipe_in_left) == -1)) {
-                    std::cerr << "Closing pipe out with pid = " << pid << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                if ((close(pipe_out_left) == -1)) {
-                    std::cerr << "Closing pipe out with pid = " << pid << std::endl;
-                    exit(EXIT_FAILURE);
-                }
+        if (!(pipes.empty())) {
 
+            if (indx != 0) {
+
+                if (dup2(pipes[indx - 1].first, STDIN_FILENO) == -1) {
+                    std::cerr << "Dup2 stdin" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
             }
-            if (pipe_out_right >= 0) {
-                if (dup2(pipe_out_right, STDOUT_FILENO) == -1) {
-                    std::cerr << "Dup2 stdout with pid = " << pid << std::endl;
+            if (indx != pipes.size()) {
+                if (dup2(pipes[indx].second, STDOUT_FILENO) == -1) {
+                    std::cerr << "Dup2 stdout" << std::endl;
                     exit(EXIT_FAILURE);
                 }
-                if ((close(pipe_in_right) == -1)) {
-                    std::cerr << "Closing pipe in with pid = " << pid << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-                if ((close(pipe_out_right) == -1)) {
-                    std::cerr << "Closing pipe out with pid = " << pid << std::endl;
+            }
+
+            // close all pipes
+            for (auto &p: pipes){
+                if ((close(p.first) == -1)) {
+                    std::cerr << "Closing pipe" << std::endl;
                     exit(EXIT_FAILURE);
                 }
 
+                if ((close(p.second) == -1)) {
+                    std::cerr << "Closing pipe" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
             }
 
             std::tie(builtin, status) = check_for_builtins(args);
@@ -109,7 +103,7 @@ int launch(std::vector<std::string> &args, const std::pair<int, int> &left, cons
         exit(errno);
 
     }
-    return 1;
+    return pid;
 }
 
 void setup_path() {

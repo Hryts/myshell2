@@ -9,7 +9,7 @@
 #include <vector>
 #include "builtins.h"
 
-int launch(std::vector<std::string> &args, const std::pair<int, int> &left, const std::pair<int, int> &right);
+int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx);
 
 void setup_path();
 

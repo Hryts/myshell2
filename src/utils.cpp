@@ -4,7 +4,6 @@
 
 #include "../headers/utils.h"
 #include <unistd.h>
-#include <sys/wait.h>
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include <fcntl.h>
@@ -32,14 +31,13 @@ static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &a
 
 void mdup(size_t fd1, size_t fd2) {
     if (dup2(fd1, fd2) == -1) {
-        std::cerr << "Failded: dup2 " << fd2 << std::endl;
+        std::cerr << "Failed: dup2 " << fd2 << std::endl;
         exit(EXIT_FAILURE);
     }
-    close(fd1);
 }
 
 int mopen(const std::string &path) {
-    int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    int fd = open(path.c_str(),  O_RDWR | O_CREAT | O_TRUNC, 0600);
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }
@@ -54,29 +52,29 @@ void redirect(std::vector<std::string> &inp) {
 
     while (arrow_sign != inp.end()) {
         arrow_sign = std::find_if(arrow_sign + 1, inp.end(), predicate);
-        if (arrow_sign == inp.end())
-            return;
+        if (arrow_sign == inp.end()) { return; }
         auto arrow_ind = std::distance(inp.begin(), arrow_sign);
         auto red_command = inp[arrow_ind];
         int tmp;
         if (red_command == ">") {
             auto open_fd = mopen(inp[arrow_ind + 1]);
-
             mdup(open_fd, STDOUT_FILENO);
-            inp.erase(arrow_sign);
+            close(open_fd);
             inp.erase(arrow_sign + 1);
+            inp.erase(arrow_sign--);
         } else if (red_command == "&>") {
             auto open_fd = mopen(inp[arrow_ind + 1]);
             mdup(open_fd, STDOUT_FILENO);
             mdup(open_fd, STDERR_FILENO);
-            inp.erase(arrow_sign);
+            close(open_fd);
             inp.erase(arrow_sign + 1);
+            inp.erase(arrow_sign--);
         } else if ((tmp = red_command.find(">&") != std::string::npos)) {
-            mdup(
-                    std::stoi(red_command.substr(0, tmp)),
-                    std::stoi(red_command.substr(tmp + 2, red_command.size() - 1))
-            );
-            inp.erase(arrow_sign);
+            auto fd1 = std::stoi(red_command.substr(0, tmp));
+            auto fd2 = std::stoi(red_command.substr(tmp + 2, red_command.size() - 1));
+            mdup(fd1, fd2);
+            close(fd1);
+            inp.erase(arrow_sign--);
         }
     }
 }
@@ -84,6 +82,11 @@ void redirect(std::vector<std::string> &inp) {
 int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
     int status;
     bool builtin;
+
+    // Preserving
+    int stdin_copy = dup(STDIN_FILENO);
+    int stdout_copy = dup(STDOUT_FILENO);
+    int stderr_copy = dup(STDERR_FILENO);
 
     redirect(args);
 
@@ -145,6 +148,8 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
             exit(status);
         }
 
+
+
         std::string victim = args[0];
         std::vector<const char *> arg_for_c;
         arg_for_c.reserve(args.size() + 1);
@@ -158,6 +163,13 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
         exit(errno);
 
     }
+
+    dup2(stdin_copy, STDIN_FILENO);
+    dup2(stdout_copy, STDOUT_FILENO);
+    dup2(stderr_copy, STDERR_FILENO);
+    close(stdin_copy);
+    close(stdin_copy);
+    close(stderr_copy);
     return pid;
 }
 

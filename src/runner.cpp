@@ -7,7 +7,6 @@
 #include <readline/history.h>
 #include <boost/filesystem.hpp>
 #include <sys/wait.h>
-#include <iostream>
 
 #define MAX_PATH 128
 extern BuiltIns builtIns;
@@ -25,7 +24,7 @@ int main(int argc, char **argv) {
     char cwd[MAX_PATH];
     std::vector<std::vector<std::string>> args;
     std::vector<std::pair<int, int>> pipes;
-    int status;
+    int status = 0;
     std::vector<int> statuses;
     while (true) {
         if (getcwd(cwd, sizeof(cwd)) == nullptr) {

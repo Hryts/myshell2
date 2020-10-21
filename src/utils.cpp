@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 #include <iostream>
 #include <boost/filesystem.hpp>
+#include <fcntl.h>
 
 extern char **environ;
 BuiltIns builtIns;
@@ -29,9 +30,63 @@ static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &a
     return std::make_pair(false, 0);
 }
 
+void mdup(size_t fd1, size_t fd2){
+    if (dup2(fd1, fd2) == -1) {
+        std::cerr << "Failded: dup2 " << fd2 << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    close(fd1);
+}
+
+size_t mopen(const std::string& path){
+    size_t fd = open(path.c_str(), O_RDONLY);
+    if (fd < 0) {
+        exit(EXIT_FAILURE);
+    }
+    return fd;
+}
+
+void redirect(std::vector<std::string>& inp){
+    auto arrow_sign = inp.begin() - 1;
+    auto predicate = [](const std::string& str) {
+        return str.find('>') != std::string::npos;// || str.find('<') != std::string::npos;
+    };
+
+    while (arrow_sign != inp.end()){
+        arrow_sign = std::find_if(arrow_sign + 1, inp.end(), predicate);
+        if (arrow_sign == inp.end())
+            return;
+        auto arrow_ind = std::distance(inp.begin(), arrow_sign);
+        auto red_command = inp[arrow_ind];
+        int tmp;
+        if(red_command == ">"){
+            mdup(mopen(inp[arrow_ind+1]), STDOUT_FILENO);
+            inp.erase(arrow_sign);
+            inp.erase(arrow_sign+1);
+        }
+        else if (red_command == "&>"){
+            auto open_fd = mopen(inp[arrow_ind + 1]);
+            mdup(open_fd, STDOUT_FILENO);
+            mdup(open_fd, STDERR_FILENO);
+            inp.erase(arrow_sign);
+            inp.erase(arrow_sign+1);
+        }
+        else if ((tmp = red_command.find(">&") != std::string::npos)){
+            mdup(
+                    std::stoi(red_command.substr(0, tmp)),
+                    std::stoi(red_command.substr(tmp+2, red_command.size()-1))
+            );
+            inp.erase(arrow_sign);
+        }
+    }
+}
+
 int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
     int status;
     bool builtin;
+
+    redirect(args);
+
     // use built-in in current process only if no pipes are used
     if (pipes.empty()) {
         std::tie(builtin, status) = check_for_builtins(args);

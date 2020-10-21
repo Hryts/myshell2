@@ -39,7 +39,7 @@ void mdup(size_t fd1, size_t fd2){
 }
 
 size_t mopen(const std::string& path){
-    size_t fd = open(path.c_str(), O_RDONLY);
+    int fd = open(path.c_str(), O_CREAT|O_RDONLY);
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }

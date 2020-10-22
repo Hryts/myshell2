@@ -32,8 +32,8 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
     input = input.substr(0, input.find('#'));
     std::vector<std::string> temp;
     if (input.find("=$") != std::string::npos) {
-        auto command_start = input.find("(") + 1;
-        auto command_end = input.find(")");
+        auto command_start = input.find('(') + 1;
+        auto command_end = input.find(')');
         if (command_end - command_start <= 0){
             std::cerr << "User debil" << std::endl;
             exit(EXIT_FAILURE);
@@ -44,27 +44,28 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
         args.push_back(std::move(temp));
         temp.clear();
         temp.emplace_back(mexport_w);
+        temp.emplace_back(input.substr(0, input.find("=$")));
         args.push_back(temp);
-        return;
     }
-    size_t initialPos = 0;
-    size_t pos = input.find(' ');
-    std::string to_put;
-    while (pos != std::string::npos) {
-        to_put = input.substr(initialPos, pos - initialPos);
-        if (to_put == "|" && !temp.empty()) {
-            args.push_back(std::move(temp));
-            temp.clear();
+    else {
+        size_t initialPos = 0;
+        size_t pos = input.find(' ');
+        std::string to_put;
+        while (pos != std::string::npos) {
+            to_put = input.substr(initialPos, pos - initialPos);
+            if (to_put == "|" && !temp.empty()) {
+                args.push_back(std::move(temp));
+                temp.clear();
+            } else if (to_put.find_first_not_of(' ') != std::string::npos)
+                wildcard(to_put, temp);
+            initialPos = pos + 1;
+            pos = input.find(' ', initialPos);
         }
-        else if (to_put.find_first_not_of(' ') != std::string::npos)
-            wildcard(to_put, temp);
-        initialPos = pos + 1;
-        pos = input.find(' ', initialPos);
-    }
-    to_put = input.substr(initialPos, std::min(pos, input.size()) - initialPos + 1);
+        to_put = input.substr(initialPos, std::min(pos, input.size()) - initialPos + 1);
 
-    if (to_put.find_first_not_of(' ') != std::string::npos)
-        wildcard(to_put, temp);
+        if (to_put.find_first_not_of(' ') != std::string::npos)
+            wildcard(to_put, temp);
+    }
     // create pipes
 
 

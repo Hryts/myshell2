@@ -111,10 +111,27 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
     } else if (pid == 0) {
 
         // if pipes are used - set up descriptors and check if command is a built-in
-        if (!(pipes.empty())) {
+        if (pipes.size() == 1 == args.size()){
+            if (dup2(pipes[0].second, STDOUT_FILENO) == -1) {
+                std::cerr << "Dup2 stdout" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if ((close(pipes[0].first) == -1)) {
+                std::cerr << "Closing pipe" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if ((close(pipes[0].second) == -1)) {
+                std::cerr << "Closing pipe" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            std::tie(builtin, status) = check_for_builtins(args);
+            if (builtin) {
+                exit(status);
+            }
+        }
+        else if (!(pipes.empty())) {
 
             if (indx != 0) {
-
                 if (dup2(pipes[indx - 1].first, STDIN_FILENO) == -1) {
                     std::cerr << "Dup2 stdin" << std::endl;
                     exit(EXIT_FAILURE);
@@ -167,6 +184,39 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
         std::cerr << victim << ": command not found " << std::endl;
         exit(errno);
 
+    }
+
+    if (pipes.size() == 1 == args.size()){
+        if (dup2(pipes[0].first, STDIN_FILENO) == -1) {
+            std::cerr << "Dup2 stdin" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if ((close(pipes[0].first) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if ((close(pipes[0].second) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        std::string res;
+        std::string line;
+        while (std::getline(std::cin, line)) {
+            res += line + ' ';
+        }
+        std::cout << res << "\n";
+
+        res += '\'';
+        res = "SOME_MOTHERFUCKING_VARIABLE_NAME=\'" + res;
+        std::cout << res << "\n";
+
+        // A bit of crutches here
+        std::vector<std::string> actually_needed_args;
+        actually_needed_args.emplace_back("mexport");
+
+        actually_needed_args.emplace_back(res);
+        if(mexport(actually_needed_args, false))
+            exit(EXIT_FAILURE);
     }
 
     dup2(stdin_copy, STDIN_FILENO);

@@ -23,8 +23,6 @@ int script_runner(const std::vector<std::string> &args, bool);
 
 int mexport(const std::vector<std::string> &args, bool);
 
-int mexport_wrapper(const std::vector<std::string> &totally_unneeded_args, bool totally_unneeded_bHelp);
-
 int mpwd(const std::vector<std::string> &args, bool bHelp);
 
 int mexit(const std::vector<std::string> &args, bool bHelp);

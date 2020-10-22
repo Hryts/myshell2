@@ -70,10 +70,9 @@ void redirect(std::vector<std::string> &inp) {
             inp.erase(arrow_sign + 1);
             inp.erase(arrow_sign--);
         } else if ((tmp = red_command.find(">&") != std::string::npos)) {
-            auto fd1 = std::stoi(red_command.substr(0, tmp));
-            auto fd2 = std::stoi(red_command.substr(tmp + 2, red_command.size() - 1));
+            int fd1 = std::stoi(red_command.substr(tmp + 2, red_command.size() - 1));
+            int fd2 = std::stoi(red_command.substr(0, tmp));
             mdup(fd1, fd2);
-            close(fd1);
             inp.erase(arrow_sign--);
         }
     }
@@ -135,8 +134,9 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
             }
 
             std::tie(builtin, status) = check_for_builtins(args);
-            if (builtin)
+            if (builtin) {
                 exit(status);
+            }
         }
 
         redirect(args);
@@ -147,8 +147,6 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
             merrno_num = status;
             exit(status);
         }
-
-
 
         std::string victim = args[0];
         std::vector<const char *> arg_for_c;

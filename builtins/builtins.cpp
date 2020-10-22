@@ -13,6 +13,7 @@ BuiltIns::BuiltIns() {
     insert("mecho", mecho);
     insert(".", script_runner);
     insert("mexport", mexport);
+    insert("mexport_wrapper", mexport_wrapper);
 }
 
 void BuiltIns::insert(const std::string &command, myFunc f) {

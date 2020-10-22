@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
             return 1;
         }
         strcat(cwd, " $ ");
-            input = readline(cwd);
+        input = readline(cwd);
         add_history(input);
 
         parse_input(input, args, pipes);

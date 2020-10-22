@@ -26,3 +26,16 @@ int mexport(const std::vector<std::string> &args, bool bHelp) {
     int status = setenv(var.c_str(), val.c_str(), 1);
     return status;
 }
+
+int mexport_wrapper(const std::vector<std::string> &totally_unneeded_args, bool totally_unneeded_bHelp) {
+    std::string res;
+    std::string line;
+    while (std::getline(std::cin, line))
+        res += line + "\n";
+    // A bit of crutches here
+    std::vector<std::string> actually_needed_args;
+    actually_needed_args.emplace_back("mexport");
+    actually_needed_args.emplace_back(res);
+    totally_unneeded_bHelp = false;
+    return mexport(totally_unneeded_args, totally_unneeded_bHelp);
+}

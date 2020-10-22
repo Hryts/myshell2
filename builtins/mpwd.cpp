@@ -26,4 +26,3 @@ int mpwd(const std::vector<std::string> &args, bool bHelp) {
 
     return 0;
 }
-

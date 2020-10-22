@@ -30,10 +30,26 @@ void
 parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes) {
     std::string input(inp);
     input = input.substr(0, input.find('#'));
+    std::vector<std::string> temp;
+    if (input.find("=$") != std::string::npos) {
+        auto command_start = input.find("(") + 1;
+        auto command_end = input.find(")");
+        if (command_end - command_start <= 0){
+            std::cerr << "User debil" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        auto cmd = input.substr(command_start, command_end-command_start);
+        std::string mexport_w = "mexport_wrapper";
+        wildcard(cmd, temp);
+        args.push_back(std::move(temp));
+        temp.clear();
+        temp.emplace_back(mexport_w);
+        args.push_back(temp);
+        return;
+    }
     size_t initialPos = 0;
     size_t pos = input.find(' ');
     std::string to_put;
-    std::vector<std::string> temp;
     while (pos != std::string::npos) {
         to_put = input.substr(initialPos, pos - initialPos);
         if (to_put == "|" && !temp.empty()) {

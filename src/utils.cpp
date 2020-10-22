@@ -36,8 +36,8 @@ void mdup(size_t fd1, size_t fd2) {
     }
 }
 
-int mopen(const std::string &path) {
-    int fd = open(path.c_str(),  O_RDWR | O_CREAT | O_TRUNC, 0600);
+int mopen(const std::string &path, int flags) {
+    int fd = open(path.c_str(),  flags, 0600);
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }
@@ -47,31 +47,38 @@ int mopen(const std::string &path) {
 void redirect(std::vector<std::string> &inp) {
     auto arrow_sign = inp.begin() - 1;
     auto predicate = [](const std::string &str) {
-        return str.find('>') != std::string::npos;// || str.find('<') != std::string::npos;
+        return str.find('>') != std::string::npos || str.find('<') != std::string::npos;
     };
 
     while (arrow_sign != inp.end()) {
         arrow_sign = std::find_if(arrow_sign + 1, inp.end(), predicate);
-        if (arrow_sign == inp.end()) { return; }
+        if (arrow_sign == inp.end())
+            return;
         auto arrow_ind = std::distance(inp.begin(), arrow_sign);
         auto red_command = inp[arrow_ind];
         int tmp;
         if (red_command == ">") {
-            auto open_fd = mopen(inp[arrow_ind + 1]);
+            auto open_fd = mopen(inp[arrow_ind + 1], O_WRONLY | O_CREAT | O_TRUNC);
             mdup(open_fd, STDOUT_FILENO);
             close(open_fd);
             inp.erase(arrow_sign + 1);
             inp.erase(arrow_sign--);
+        } else if(red_command == "<") {
+            auto open_fd = mopen(inp[arrow_ind + 1], O_RDONLY);
+            mdup(open_fd, STDIN_FILENO);
+            close(open_fd);
+            inp.erase(arrow_sign + 1);
+            inp.erase(arrow_sign--);
         } else if (red_command == "&>") {
-            auto open_fd = mopen(inp[arrow_ind + 1]);
+            auto open_fd = mopen(inp[arrow_ind + 1], O_WRONLY | O_CREAT | O_TRUNC);
             mdup(open_fd, STDOUT_FILENO);
             mdup(open_fd, STDERR_FILENO);
             close(open_fd);
             inp.erase(arrow_sign + 1);
             inp.erase(arrow_sign--);
         } else if ((tmp = red_command.find(">&") != std::string::npos)) {
-            int fd1 = std::stoi(red_command.substr(tmp + 2, red_command.size() - 1));
-            int fd2 = std::stoi(red_command.substr(0, tmp));
+            int fd1 = std::stoi(red_command.substr(tmp + 2, red_command.size()));  // after >& (until the end)
+            int fd2 = std::stoi(red_command.substr(0, tmp));  // before >&
             mdup(fd1, fd2);
             inp.erase(arrow_sign--);
         }

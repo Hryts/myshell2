@@ -88,8 +88,6 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
     int stdout_copy = dup(STDOUT_FILENO);
     int stderr_copy = dup(STDERR_FILENO);
 
-    redirect(args);
-
     // use built-in in current process only if no pipes are used
     if (pipes.empty()) {
         std::tie(builtin, status) = check_for_builtins(args);
@@ -140,6 +138,8 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
             if (builtin)
                 exit(status);
         }
+
+        redirect(args);
 
         if (boost::filesystem::extension(args[0]) == ".msh") {
             args.insert(args.begin(), ".");

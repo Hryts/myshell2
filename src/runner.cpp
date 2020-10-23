@@ -34,6 +34,7 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
+
         parse_input(input, args, pipes);
         if (!args.empty()) {
             for (int i = 0; i < args.size(); ++i) {
@@ -41,13 +42,6 @@ int main(int argc, char **argv) {
                 statuses.emplace_back(status);
             }
         }
-        for (auto & pipe : pipes) {
-            if (close(pipe.first) == -1)
-                exit(EXIT_FAILURE);
-            if (close(pipe.second) == -1)
-                exit(EXIT_FAILURE);
-        }
-
 
         if (status != 0)
             for (int st : statuses) {

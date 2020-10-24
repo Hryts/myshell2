@@ -18,7 +18,18 @@ void test(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> 
         std::cerr << "Dup2 stdin" << std::endl;
         exit(EXIT_FAILURE);
     }
-    std::string res;
+    for (auto &p: _pipes) {
+        if ((close(p.first) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if ((close(p.second) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+    std::string res = "=\'";
     std::string line;
     while (std::getline(std::cin, line)) {
         res += line + ' ';
@@ -80,31 +91,6 @@ void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, s
             exit(EXIT_FAILURE);
         }
         pipes.emplace_back(pfd[0], pfd[1]);
-
-//        parent_function = std::function<void(const std::vector<std::string> &p_a,
-//                                           std::vector<std::pair<int, int>> &_pipes)>(
-//                [](const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
-//                    if (dup2(_pipes[0].first, STDIN_FILENO) == -1) {
-//                        std::cerr << "Dup2 stdin" << std::endl;
-//                        exit(EXIT_FAILURE);
-//                    }
-//                    std::string res;
-//                    std::string line;
-//                    while (std::getline(std::cin, line)) {
-//                        res += line + ' ';
-//                    }
-//
-//                    res += '\'';
-//                    res = p_a[0] + res;
-//
-//                    // A bit of crutches here
-//                    std::vector<std::string> actually_needed_args;
-//                    actually_needed_args.push_back("mexport");
-//
-//                    actually_needed_args.push_back(res);
-//                    if (mexport(actually_needed_args, false))
-//                        exit(EXIT_FAILURE);
-//                });
         parent_function = test;
         return;
     }

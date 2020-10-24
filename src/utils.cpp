@@ -85,7 +85,7 @@ void redirect(std::vector<std::string> &inp) {
     }
 }
 
-template <typename Function, typename... Args>
+//template <typename Function, typename... Args>
 int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
     int status;
     bool builtin;

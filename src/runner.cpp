@@ -34,7 +34,9 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
-        void (*parent_behaviour)(const std::vector<std::string>&, std::vector<std::pair<int, int>>);
+        auto parent_behaviour = std::function<void(const std::vector<std::string> &p_a,
+        std::vector<std::pair<int, int>> &pipes)>([](const std::vector<std::string> &p_a,
+                                                      std::vector<std::pair<int, int>> &_pipes){});
         std::vector<std::string> parent_args;
 
         // Preserving

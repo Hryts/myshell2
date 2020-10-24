@@ -26,6 +26,10 @@ int main(int argc, char **argv) {
     std::vector<std::pair<int, int>> pipes;
     int status = 0;
     std::vector<int> statuses;
+    auto parent_behaviour = std::function<void(const std::vector<std::string> &p_a,
+                                               std::vector<std::pair<int, int>> &pipes)>(
+            [](const std::vector<std::string> &p_a,
+               std::vector<std::pair<int, int>> &_pipes) {});
     while (true) {
         if (getcwd(cwd, sizeof(cwd)) == nullptr) {
             return 1;
@@ -34,9 +38,6 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
-        auto parent_behaviour = std::function<void(const std::vector<std::string> &p_a,
-        std::vector<std::pair<int, int>> &pipes)>([](const std::vector<std::string> &p_a,
-                                                      std::vector<std::pair<int, int>> &_pipes){});
         std::vector<std::string> parent_args;
 
         // Preserving
@@ -68,6 +69,9 @@ int main(int argc, char **argv) {
                 if (waitpid(st, &status, 0) == -1)
                     exit(EXIT_FAILURE);
             }
+
+        parent_behaviour = [](const std::vector<std::string> &p_a,
+                              std::vector<std::pair<int, int>> &_pipes) {};
 
         merrno_num = status;
         args.clear();

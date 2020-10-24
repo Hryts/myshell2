@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
 
         if (!args.empty()) {
             for (int i = 0; i < args.size(); ++i) {
-                status = launch(args[i], pipes, i, crutch.second);
+                status = launch(args[i], pipes, i, i == args.size() && crutch.second);
                 statuses.emplace_back(status);
             }
         }
 
-        if (crutch.first){
+        if (crutch.first) {
             init_var_by_pipe(parent_args, pipes);
         }
 
@@ -64,11 +64,9 @@ int main(int argc, char **argv) {
             }
         }
 
-        if (crutch.second){
+        if (crutch.second) {
             signal(SIGCHLD, SIG_IGN);
-        }
-        else if (status != 0)
-        {
+        } else if (status != 0) {
             for (int st : statuses) {
                 if (waitpid(st, &status, 0) == -1)
                     exit(EXIT_FAILURE);

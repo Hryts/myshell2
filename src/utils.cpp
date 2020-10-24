@@ -12,22 +12,7 @@ extern char **environ;
 BuiltIns builtIns;
 
 
-static std::pair<bool, int> check_for_builtins(const std::vector<std::string> &args) {
-    myFunc cmd;
-    int status;
-    if ((cmd = builtIns.get_func(args[0])) != nullptr) {
-        bool bHelp = false;
-        for (int i = 1; i < args.size(); ++i) {
-            if (args[i] == "--help" || args[i] == "-h") {
-                bHelp = true;
-            }
-        }
-        status = cmd(args, bHelp);
-        merrno_num = status;
-        return std::make_pair(true, status);
-    }
-    return std::make_pair(false, 0);
-}
+
 
 void mdup(size_t fd1, size_t fd2) {
     if (dup2(fd1, fd2) == -1) {
@@ -90,6 +75,25 @@ void redirect(std::vector<std::string> &inp) {
             inp.erase(arrow_sign--);
         }
     }
+}
+
+
+static std::pair<bool, int> check_for_builtins(std::vector<std::string> &args) {
+    redirect(args);
+    myFunc cmd;
+    int status;
+    if ((cmd = builtIns.get_func(args[0])) != nullptr) {
+        bool bHelp = false;
+        for (int i = 1; i < args.size(); ++i) {
+            if (args[i] == "--help" || args[i] == "-h") {
+                bHelp = true;
+            }
+        }
+        status = cmd(args, bHelp);
+        merrno_num = status;
+        return std::make_pair(true, status);
+    }
+    return std::make_pair(false, 0);
 }
 
 void init_var_by_pipe(const std::string &p_a, std::vector<std::pair<int, int>> &_pipes) {
@@ -177,14 +181,22 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
                     exit(EXIT_FAILURE);
                 }
             }
-
-            std::tie(builtin, status) = check_for_builtins(args);
-            if (builtin) {
-                exit(status);
-            }
         }
 
         redirect(args);
+
+        if (isBackProc)
+            if (close(STDOUT_FILENO) == -1)
+            {
+                std::cerr << "Closing stdout error" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+        std::tie(builtin, status) = check_for_builtins(args);
+        if (builtin) {
+            exit(status);
+        }
+
 
         if (boost::filesystem::extension(args[0]) == ".msh") {
             args.insert(args.begin(), ".");

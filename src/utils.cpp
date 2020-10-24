@@ -37,7 +37,7 @@ void mdup(size_t fd1, size_t fd2) {
 }
 
 int mopen(const std::string &path, int flags) {
-    int fd = open(path.c_str(),  flags, 0600);
+    int fd = open(path.c_str(), flags, 0600);
     if (fd < 0) {
         exit(EXIT_FAILURE);
     }
@@ -63,7 +63,7 @@ void redirect(std::vector<std::string> &inp) {
             close(open_fd);
             inp.erase(arrow_sign + 1);
             inp.erase(arrow_sign--);
-        } else if(red_command == "<") {
+        } else if (red_command == "<") {
             auto open_fd = mopen(inp[arrow_ind + 1], O_RDONLY);
             mdup(open_fd, STDIN_FILENO);
             close(open_fd);
@@ -81,12 +81,58 @@ void redirect(std::vector<std::string> &inp) {
             int fd2 = std::stoi(red_command.substr(0, tmp));  // before >&
             mdup(fd1, fd2);
             inp.erase(arrow_sign--);
+        } else if ((tmp = red_command.find(">") != std::string::npos)) {
+            auto fd1 = mopen(inp[arrow_ind + 1], O_WRONLY | O_CREAT | O_TRUNC);
+            int fd2 = std::stoi(red_command.substr(0, tmp));  // before >
+            mdup(fd1, fd2);
+            close(fd1);
+            inp.erase(arrow_sign + 1);
+            inp.erase(arrow_sign--);
         }
     }
 }
 
+void init_var_by_pipe(const std::string &p_a, std::vector<std::pair<int, int>> &_pipes) {
+    int stdin_copy = dup(_pipes[_pipes.size() - 1].first);
+
+    for (auto &p: _pipes) {
+        if ((close(p.first) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        if ((close(p.second) == -1)) {
+            std::cerr << "Closing pipe" << std::endl;
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    _pipes.clear();
+
+    std::string res = "=";
+    char buffer[4096];
+    int bytes_read;
+    std::string read_pipe;
+//    std::cout << "dad " << _pipes[_pipes.size() - 1].first << " " << _pipes[_pipes.size() - 1].second << std::endl;
+    while (!((bytes_read = read(stdin_copy, &buffer[0], 4096)) <= 0 && errno != EINTR)) {
+        read_pipe = buffer;
+        res += read_pipe.substr(0, bytes_read - 1);
+    }
+    close(stdin_copy);
+    res = p_a + res;
+
+// A bit of crutches here
+    std::vector<std::string> args;
+    args.emplace_back("mexport");
+
+    args.push_back(res);
+    if (mexport(args, false))
+        exit(EXIT_FAILURE);
+}
+
+
 //template <typename Function, typename... Args>
-int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
+int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx, bool isBackProc) {
     int status;
     bool builtin;
 
@@ -106,7 +152,6 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
         exit(EXIT_FAILURE);
     } else if (pid == 0) {
         if (!(pipes.empty())) {
-
             if (indx != 0) {
                 if (dup2(pipes[indx - 1].first, STDIN_FILENO) == -1) {
                     std::cerr << "Dup2 stdin" << std::endl;

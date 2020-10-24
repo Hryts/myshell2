@@ -16,9 +16,9 @@
 //        void (*parent_behaviour)(const std::vector<std::string>&, std::vector<std::pair<int, int>>&),
 //        std::vector<std::string>& p_args);
 
+std::pair<bool, bool> parse_input(const char *inp,
+                                  std::vector<std::vector<std::string>> &args,
+                                  std::vector<std::pair<int, int>> &pipes,
+                                  std::string &p_args);
 
-void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes,
-                 std::function<void(const std::vector<std::string> &p_a,
-                                    std::vector<std::pair<int, int>> &pipes)>& parent_function,
-                 std::vector<std::string> &p_args);
 #endif //MYSHELL_PARSERS_H

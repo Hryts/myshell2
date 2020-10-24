@@ -14,47 +14,6 @@
 namespace fs = std::filesystem;
 
 
-void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
-
-    int stdin_copy = dup(_pipes[_pipes.size() - 1].first);
-
-
-    for (auto &p: _pipes) {
-        if ((close(p.first) == -1)) {
-            std::cerr << "Closing pipe" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-
-        if ((close(p.second) == -1)) {
-            std::cerr << "Closing pipe" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    _pipes.clear();
-
-    std::string res = "=";
-    char buffer[4096];
-    int bytes_read;
-    std::string read_pipe;
-//    std::cout << "dad " << _pipes[_pipes.size() - 1].first << " " << _pipes[_pipes.size() - 1].second << std::endl;
-    while (!((bytes_read = read(stdin_copy, &buffer[0], 4096)) <= 0 && errno != EINTR)) {
-        read_pipe = buffer;
-        res += read_pipe.substr(0, bytes_read - 1);
-    }
-
-
-    close(stdin_copy);
-    res = p_a[0] + res;
-
-// A bit of crutches here
-    std::vector<std::string> actually_needed_args;
-    actually_needed_args.emplace_back("mexport");
-
-    actually_needed_args.push_back(res);
-    if (mexport(actually_needed_args, false))
-        exit(EXIT_FAILURE);
-}
 
 void wildcard(std::string &path, std::vector<std::string> &args) {
     int added = 0;
@@ -71,41 +30,27 @@ void wildcard(std::string &path, std::vector<std::string> &args) {
     } else { args.emplace_back(path); }
 }
 
-void def_behaviour(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
-    int status = 0;
-    for (int i=0; i<std::stoi(p_a[0]); i++) {
-        if (wait(&status) == -1)
-            exit(EXIT_FAILURE);
-    }
-}
 
-void bg_exec_behaviour(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
-    signal(SIGCHLD,SIG_IGN);
-}
-
-void parse_input(const char *inp,
-                 std::vector<std::vector<std::string>> &args,
-                 std::vector<std::pair<int, int>> &pipes,
-                 std::function<void(const std::vector<std::string> &p_a,
-                                    std::vector<std::pair<int, int>> &pipes)> &parent_function,
-                 std::vector<std::string> &p_args) {
+std::pair<bool, bool> parse_input(const char *inp,
+                                  std::vector<std::vector<std::string>> &args,
+                                  std::vector<std::pair<int, int>> &pipes,
+                                  std::string &p_args) {
     std::string input(inp);
     input = input.substr(0, input.find('#'));
     std::vector<std::string> temp;
     std::string cmd;
-    if (input.find("=$") != std::string::npos) {
+    bool isInitVar = input.find("=$") != std::string::npos, isBackProc = false;
+    if (isInitVar) {
         // Seek for command
         auto command_start = input.find("(") + 1;
         auto command_end = input.find(")");
         if (command_end - command_start <= 0) {
-            std::cerr << "User debil" << std::endl;
+            std::cerr << "Invalid input" << std::endl;
             exit(EXIT_FAILURE);
         }
         auto var_name = input.substr(0, input.find("=$"));
-        p_args.push_back(var_name);
+        p_args = var_name;
         cmd = input.substr(command_start, command_end - command_start);
-//        wildcard(cmd, temp);
-//        args.push_back(std::move(temp));
 
         // Create a pipe
         int pfd[2];
@@ -114,8 +59,6 @@ void parse_input(const char *inp,
             exit(EXIT_FAILURE);
         }
         pipes.emplace_back(pfd[0], pfd[1]);
-        parent_function = init_var_by_pipe;
-//        return;
     }
     if ((!cmd.empty()))
         input = cmd;
@@ -134,22 +77,25 @@ void parse_input(const char *inp,
     }
     to_put = input.substr(initialPos, std::min(pos, input.size()) - initialPos + 1);
 
-    if(to_put == "&"){
-        parent_function = bg_exec_behaviour;
-    } else if (to_put.find_first_not_of(' ') != std::string::npos)
+    isBackProc = to_put == "&";
+
+    if (to_put.find_first_not_of(' ') != std::string::npos)
         wildcard(to_put, temp);
+
+    if (!temp.empty())
+        args.push_back(std::move(temp));
 
 
     // create pipes
-    if (!temp.empty()) {
-        args.push_back(std::move(temp));
-        int pfd[2];
-        for (int i = 0; i < args.size() - 1; ++i) {
-            if (pipe(pfd) == -1) {
-                std::cerr << "Failed to pipe" << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            pipes.emplace_back(pfd[0], pfd[1]);
+    int pfd[2];
+    for (int i = 0; i < args.size() - 1; ++i) {
+        if (pipe(pfd) == -1) {
+            std::cerr << "Failed to pipe" << std::endl;
+            exit(EXIT_FAILURE);
         }
+        pipes.emplace_back(pfd[0], pfd[1]);
     }
+
+    return std::make_pair(isInitVar, isBackProc);
+
 }

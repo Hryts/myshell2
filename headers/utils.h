@@ -9,8 +9,8 @@
 #include <vector>
 #include "builtins.h"
 
-int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx);
-
+int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx, bool isBackProc);
+void init_var_by_pipe(const std::string &p_a, std::vector<std::pair<int, int>> &_pipes);
 void setup_path();
 
 

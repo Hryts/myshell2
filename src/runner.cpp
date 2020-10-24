@@ -27,12 +27,8 @@ int main(int argc, char **argv) {
     std::vector<std::pair<int, int>> pipes;
     int status = 0;
     std::vector<int> statuses;
-    std::vector<std::string> parent_args;
-
-    auto parent_behaviour = std::function<void(const std::vector<std::string> &p_a,
-                                               std::vector<std::pair<int, int>> &pipes)>(
-            [](const std::vector<std::string> &p_a,
-               std::vector<std::pair<int, int>> &_pipes) {});
+    std::string parent_args;
+    std::pair<bool, bool> crutch;
 
     while (true) {
         if (getcwd(cwd, sizeof(cwd)) == nullptr) {
@@ -43,30 +39,18 @@ int main(int argc, char **argv) {
         add_history(input);
 
 
-        // Preserving
-//        int stdin_copy = dup(STDIN_FILENO);
-//        int stdout_copy = dup(STDOUT_FILENO);
-//        int stderr_copy = dup(STDERR_FILENO);
+        crutch = parse_input(input, args, pipes, parent_args);
 
-
-        parse_input(input, args, pipes, parent_behaviour, parent_args);
         if (!args.empty()) {
             for (int i = 0; i < args.size(); ++i) {
-                status = launch(args[i], pipes, i);
+                status = launch(args[i], pipes, i, crutch.second);
                 statuses.emplace_back(status);
             }
         }
 
-        parent_behaviour(parent_args, pipes);
-
-
-//        dup2(stdin_copy, STDIN_FILENO);
-//        dup2(stdout_copy, STDOUT_FILENO);
-//        dup2(stderr_copy, STDERR_FILENO);
-//        close(stdin_copy);
-//        close(stdin_copy);
-//        close(stderr_copy);
-
+        if (crutch.first){
+            init_var_by_pipe(parent_args, pipes);
+        }
 
         for (auto &p: pipes) {
             if ((close(p.first) == -1)) {
@@ -79,14 +63,17 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             }
         }
-        if (status != 0)
+
+        if (crutch.second){
+            signal(SIGCHLD, SIG_IGN);
+        }
+        else if (status != 0)
+        {
             for (int st : statuses) {
                 if (waitpid(st, &status, 0) == -1)
                     exit(EXIT_FAILURE);
             }
-
-        parent_behaviour = [](const std::vector<std::string> &p_a,
-                              std::vector<std::pair<int, int>> &_pipes) {};
+        }
 
         merrno_num = status;
         args.clear();

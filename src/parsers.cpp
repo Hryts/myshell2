@@ -78,16 +78,15 @@ std::pair<bool, bool> parse_input(const char *inp,
 
     isBackProc = to_put == "&";
 
-    if (to_put.find_first_not_of(' ') != std::string::npos)
+    if (to_put.find_first_not_of(' ') != std::string::npos && to_put != "&")
         wildcard(to_put, temp);
 
     if (!temp.empty())
         args.push_back(std::move(temp));
 
-
     // create pipes
     int pfd[2];
-    for (int i = 0; i < args.size() - 1; ++i) {
+    for (int i = 0; i < (int)args.size() - 1; ++i) {
         if (pipe(pfd) == -1) {
             std::cerr << "Failed to pipe" << std::endl;
             exit(EXIT_FAILURE);

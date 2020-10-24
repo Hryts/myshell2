@@ -38,7 +38,6 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
-
         crutch = parse_input(input, args, pipes, parent_args);
 
         if (!args.empty()) {

@@ -182,14 +182,22 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
             }
         }
 
-        redirect(args);
-
-        if (isBackProc)
-            if (close(STDOUT_FILENO) == -1)
-            {
+        if (isBackProc) {
+            if (close(STDOUT_FILENO) == -1) {
                 std::cerr << "Closing stdout error" << std::endl;
                 exit(EXIT_FAILURE);
             }
+            if (close(STDIN_FILENO) == -1) {
+                std::cerr << "Closing stdin error" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if (close(STDERR_FILENO) == -1) {
+                std::cerr << "Closing stderr error" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        redirect(args);
 
         std::tie(builtin, status) = check_for_builtins(args);
         if (builtin) {

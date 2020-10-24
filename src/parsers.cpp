@@ -15,12 +15,8 @@ namespace fs = std::filesystem;
 
 void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
 
-    int stdin_copy = dup(STDIN_FILENO);
+    int stdin_copy = dup(_pipes[_pipes.size() - 1].first);
 
-    if (dup2(_pipes[_pipes.size() - 1].first, STDIN_FILENO) == -1) {
-        std::cerr << "Dup2 stdin" << std::endl;
-        exit(EXIT_FAILURE);
-    }
 
     for (auto &p: _pipes) {
         if ((close(p.first) == -1)) {
@@ -37,25 +33,17 @@ void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair
     _pipes.clear();
 
     std::string res = "=";
-    std::string line;
     char buffer[4096];
     int bytes_read;
-//    std::string read_pipe;
+    std::string read_pipe;
 //    std::cout << "dad " << _pipes[_pipes.size() - 1].first << " " << _pipes[_pipes.size() - 1].second << std::endl;
-//    while(!((bytes_read = read(_pipes[_pipes.size() - 1].first, &buffer[0], 4096)) <= 0 && errno != EINTR)){
-//        read_pipe = buffer;
-//        res += read_pipe.substr(0, bytes_read);
-//    }
-
-
-
-    while (std::getline(std::cin, line)) {
-        res += line + '\t';
+    while (!((bytes_read = read(stdin_copy, &buffer[0], 4096)) <= 0 && errno != EINTR)) {
+        read_pipe = buffer;
+        res += read_pipe.substr(0, bytes_read - 1);
     }
 
-    dup2(stdin_copy, STDIN_FILENO);
+
     close(stdin_copy);
-//    res += '\'';
     res = p_a[0] + res;
 
 // A bit of crutches here
@@ -84,12 +72,11 @@ void wildcard(std::string &path, std::vector<std::string> &args) {
 
 
 void parse_input(const char *inp,
-        std::vector<std::vector<std::string>> &args,
-        std::vector<std::pair<int, int>> &pipes,
-        std::function<void(const std::vector<std::string> &p_a,
-        std::vector<std::pair<int, int>> &pipes)>& parent_function,
-        std::vector<std::string> &p_args)
-        {
+                 std::vector<std::vector<std::string>> &args,
+                 std::vector<std::pair<int, int>> &pipes,
+                 std::function<void(const std::vector<std::string> &p_a,
+                                    std::vector<std::pair<int, int>> &pipes)> &parent_function,
+                 std::vector<std::string> &p_args) {
     std::string input(inp);
     input = input.substr(0, input.find('#'));
     std::vector<std::string> temp;
@@ -118,7 +105,7 @@ void parse_input(const char *inp,
         parent_function = init_var_by_pipe;
 //        return;
     }
-    if((!cmd.empty()))
+    if ((!cmd.empty()))
         input = cmd;
     size_t initialPos = 0;
     size_t pos = input.find(' ');

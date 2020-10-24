@@ -22,8 +22,6 @@ int mexport(const std::vector<std::string> &args, bool bHelp) {
     }
     std::string var = args[1].substr(0, args[1].find('='));
     std::string val = args[1].substr(args[1].find('=') + 1, args[1].size());
-    std::cout << val << std::endl;
-    std::cout << var << std::endl;
 
     int status = setenv(var.c_str(), val.c_str(), 1);
     return status;

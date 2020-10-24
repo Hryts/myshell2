@@ -19,7 +19,7 @@ typedef std::unordered_map<std::string, myFunc> myMap;
 
 int mcd(const std::vector<std::string> &args, bool bHelp);
 
-//int script_runner(const std::vector<std::string> &args, bool);
+int script_runner(const std::vector<std::string> &args, bool);
 
 int mexport(const std::vector<std::string> &args, bool);
 

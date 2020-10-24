@@ -1,0 +1,3 @@
+var=$(ls | grep m | wc)
+ls | grep m | wc
+mecho $var

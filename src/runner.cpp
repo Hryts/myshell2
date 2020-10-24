@@ -27,10 +27,13 @@ int main(int argc, char **argv) {
     std::vector<std::pair<int, int>> pipes;
     int status = 0;
     std::vector<int> statuses;
+    std::vector<std::string> parent_args;
+
     auto parent_behaviour = std::function<void(const std::vector<std::string> &p_a,
                                                std::vector<std::pair<int, int>> &pipes)>(
             [](const std::vector<std::string> &p_a,
                std::vector<std::pair<int, int>> &_pipes) {});
+
     while (true) {
         if (getcwd(cwd, sizeof(cwd)) == nullptr) {
             return 1;
@@ -39,7 +42,6 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
-        std::vector<std::string> parent_args;
 
         // Preserving
 //        int stdin_copy = dup(STDIN_FILENO);
@@ -90,6 +92,7 @@ int main(int argc, char **argv) {
         args.clear();
         pipes.clear();
         statuses.clear();
+        parent_args.clear();
         free(input);
     }
 }

@@ -42,9 +42,9 @@ int main(int argc, char **argv) {
         std::vector<std::string> parent_args;
 
         // Preserving
-        int stdin_copy = dup(STDIN_FILENO);
-        int stdout_copy = dup(STDOUT_FILENO);
-        int stderr_copy = dup(STDERR_FILENO);
+//        int stdin_copy = dup(STDIN_FILENO);
+//        int stdout_copy = dup(STDOUT_FILENO);
+//        int stderr_copy = dup(STDERR_FILENO);
 
 
         parse_input(input, args, pipes, parent_behaviour, parent_args);
@@ -58,12 +58,12 @@ int main(int argc, char **argv) {
         parent_behaviour(parent_args, pipes);
 
 
-        dup2(stdin_copy, STDIN_FILENO);
-        dup2(stdout_copy, STDOUT_FILENO);
-        dup2(stderr_copy, STDERR_FILENO);
-        close(stdin_copy);
-        close(stdin_copy);
-        close(stderr_copy);
+//        dup2(stdin_copy, STDIN_FILENO);
+//        dup2(stdout_copy, STDOUT_FILENO);
+//        dup2(stderr_copy, STDERR_FILENO);
+//        close(stdin_copy);
+//        close(stdin_copy);
+//        close(stderr_copy);
 
 
         for (auto &p: pipes) {

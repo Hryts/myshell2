@@ -14,10 +14,14 @@ namespace fs = std::filesystem;
 
 
 void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
-    if (dup2(_pipes[0].first, STDIN_FILENO) == -1) {
+
+    int stdin_copy = dup(STDIN_FILENO);
+
+    if (dup2(_pipes[_pipes.size() - 1].first, STDIN_FILENO) == -1) {
         std::cerr << "Dup2 stdin" << std::endl;
         exit(EXIT_FAILURE);
     }
+
     for (auto &p: _pipes) {
         if ((close(p.first) == -1)) {
             std::cerr << "Closing pipe" << std::endl;
@@ -29,18 +33,34 @@ void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair
             exit(EXIT_FAILURE);
         }
     }
-    std::string res = "=\'";
+
+    _pipes.clear();
+
+    std::string res = "=";
     std::string line;
+    char buffer[4096];
+    int bytes_read;
+//    std::string read_pipe;
+//    std::cout << "dad " << _pipes[_pipes.size() - 1].first << " " << _pipes[_pipes.size() - 1].second << std::endl;
+//    while(!((bytes_read = read(_pipes[_pipes.size() - 1].first, &buffer[0], 4096)) <= 0 && errno != EINTR)){
+//        read_pipe = buffer;
+//        res += read_pipe.substr(0, bytes_read);
+//    }
+
+
+
     while (std::getline(std::cin, line)) {
-        res += line + ' ';
+        res += line + '\t';
     }
 
-    res += '\'';
+    dup2(stdin_copy, STDIN_FILENO);
+    close(stdin_copy);
+//    res += '\'';
     res = p_a[0] + res;
 
 // A bit of crutches here
     std::vector<std::string> actually_needed_args;
-    actually_needed_args.push_back("mexport");
+    actually_needed_args.emplace_back("mexport");
 
     actually_needed_args.push_back(res);
     if (mexport(actually_needed_args, false))

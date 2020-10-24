@@ -85,14 +85,10 @@ void redirect(std::vector<std::string> &inp) {
     }
 }
 
+template <typename Function, typename... Args>
 int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>> &pipes, int indx) {
     int status;
     bool builtin;
-
-    // Preserving
-    int stdin_copy = dup(STDIN_FILENO);
-    int stdout_copy = dup(STDOUT_FILENO);
-    int stderr_copy = dup(STDERR_FILENO);
 
     // use built-in in current process only if no pipes are used
     if (pipes.empty()) {
@@ -165,36 +161,6 @@ int launch(std::vector<std::string> &args, const std::vector<std::pair<int, int>
         exit(errno);
 
     }
-
-    if (pipes.size() == 1 == args.size()){
-        if (dup2(pipes[0].first, STDIN_FILENO) == -1) {
-            std::cerr << "Dup2 stdin" << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        std::string res;
-        std::string line;
-        while (std::getline(std::cin, line)) {
-            res += line + ' ';
-        }
-
-        res += '\'';
-        res = "SOME_MOTHERFUCKING_VARIABLE_NAME=\'" + res;
-
-        // A bit of crutches here
-        std::vector<std::string> actually_needed_args;
-        actually_needed_args.push_back("mexport");
-
-        actually_needed_args.push_back(res);
-        if(mexport(actually_needed_args, false))
-            exit(EXIT_FAILURE);
-    }
-
-    dup2(stdin_copy, STDIN_FILENO);
-    dup2(stdout_copy, STDOUT_FILENO);
-    dup2(stderr_copy, STDERR_FILENO);
-    close(stdin_copy);
-    close(stdin_copy);
-    close(stderr_copy);
     return pid;
 }
 

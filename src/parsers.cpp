@@ -7,6 +7,7 @@
 #include <filesystem>
 #include "../headers/wildcard.hpp"
 #include <unistd.h>
+#include "../headers/builtins.h"
 
 namespace fs = std::filesystem;
 
@@ -26,8 +27,9 @@ void wildcard(std::string &path, std::vector<std::string> &args) {
 }
 
 
-void
-parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes) {
+void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes,
+            void (*parent_behaviour)(const std::vector<std::string>&, std::vector<std::pair<int, int>>&),
+            std::vector<std::string>& p_args) {
     std::string input(inp);
     input = input.substr(0, input.find('#'));
     std::vector<std::string> temp;
@@ -39,6 +41,8 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
             std::cerr << "User debil" << std::endl;
             exit(EXIT_FAILURE);
         }
+        auto var_name = input.substr(0, input.find("=$"));
+        p_args.push_back(var_name);
         auto cmd = input.substr(command_start, command_end-command_start);
         wildcard(cmd, temp);
         args.push_back(std::move(temp));
@@ -50,6 +54,28 @@ parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::v
             exit(EXIT_FAILURE);
         }
         pipes.emplace_back(pfd[0], pfd[1]);
+        parent_behaviour = [](const std::vector<std::string>& p_a, std::vector<std::pair<int, int>>_pipes){
+            if (dup2(_pipes[0].first, STDIN_FILENO) == -1) {
+                std::cerr << "Dup2 stdin" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            std::string res;
+            std::string line;
+            while (std::getline(std::cin, line)) {
+                res += line + ' ';
+            }
+
+            res += '\'';
+            res = p_a[0] + res;
+
+            // A bit of crutches here
+            std::vector<std::string> actually_needed_args;
+            actually_needed_args.push_back("mexport");
+
+            actually_needed_args.push_back(res);
+            if(mexport(actually_needed_args, false))
+                exit(EXIT_FAILURE);
+        };
         return;
     }
     size_t initialPos = 0;

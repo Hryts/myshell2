@@ -34,14 +34,32 @@ int main(int argc, char **argv) {
         input = readline(cwd);
         add_history(input);
 
+        void (*parent_behaviour)(const std::vector<std::string>&, std::vector<std::pair<int, int>>);
+        std::vector<std::string> parent_args;
 
-        parse_input(input, args, pipes);
+        // Preserving
+        int stdin_copy = dup(STDIN_FILENO);
+        int stdout_copy = dup(STDOUT_FILENO);
+        int stderr_copy = dup(STDERR_FILENO);
+
+
+        parse_input(input, args, pipes, parent_behaviour, parent_args);
         if (!args.empty()) {
             for (int i = 0; i < args.size(); ++i) {
                 status = launch(args[i], pipes, i);
                 statuses.emplace_back(status);
             }
         }
+
+        parent_behaviour(parent_args, pipes);
+
+
+        dup2(stdin_copy, STDIN_FILENO);
+        dup2(stdout_copy, STDOUT_FILENO);
+        dup2(stderr_copy, STDERR_FILENO);
+        close(stdin_copy);
+        close(stdin_copy);
+        close(stderr_copy);
 
         if (status != 0)
             for (int st : statuses) {

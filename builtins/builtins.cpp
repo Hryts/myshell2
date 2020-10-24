@@ -11,7 +11,7 @@ BuiltIns::BuiltIns() {
     insert("merrno", merrno);
     insert("mexit", mexit);
     insert("mecho", mecho);
-    insert(".", script_runner);
+//    insert(".", script_runner);
     insert("mexport", mexport);
 }
 

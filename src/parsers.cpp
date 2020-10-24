@@ -13,7 +13,7 @@
 namespace fs = std::filesystem;
 
 
-void test(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
+void init_var_by_pipe(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
     if (dup2(_pipes[0].first, STDIN_FILENO) == -1) {
         std::cerr << "Dup2 stdin" << std::endl;
         exit(EXIT_FAILURE);
@@ -63,13 +63,17 @@ void wildcard(std::string &path, std::vector<std::string> &args) {
 }
 
 
-void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, std::vector<std::pair<int, int>> &pipes,
-                 std::function<void(const std::vector<std::string> &p_a,
-                                    std::vector<std::pair<int, int>> &pipes)>& parent_function,
-                 std::vector<std::string> &p_args) {
+void parse_input(const char *inp,
+        std::vector<std::vector<std::string>> &args,
+        std::vector<std::pair<int, int>> &pipes,
+        std::function<void(const std::vector<std::string> &p_a,
+        std::vector<std::pair<int, int>> &pipes)>& parent_function,
+        std::vector<std::string> &p_args)
+        {
     std::string input(inp);
     input = input.substr(0, input.find('#'));
     std::vector<std::string> temp;
+    std::string cmd;
     if (input.find("=$") != std::string::npos) {
         // Seek for command
         auto command_start = input.find("(") + 1;
@@ -80,9 +84,9 @@ void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, s
         }
         auto var_name = input.substr(0, input.find("=$"));
         p_args.push_back(var_name);
-        auto cmd = input.substr(command_start, command_end - command_start);
-        wildcard(cmd, temp);
-        args.push_back(std::move(temp));
+        cmd = input.substr(command_start, command_end - command_start);
+//        wildcard(cmd, temp);
+//        args.push_back(std::move(temp));
 
         // Create a pipe
         int pfd[2];
@@ -91,9 +95,11 @@ void parse_input(const char *inp, std::vector<std::vector<std::string>> &args, s
             exit(EXIT_FAILURE);
         }
         pipes.emplace_back(pfd[0], pfd[1]);
-        parent_function = test;
-        return;
+        parent_function = init_var_by_pipe;
+//        return;
     }
+    if((!cmd.empty()))
+        input = cmd;
     size_t initialPos = 0;
     size_t pos = input.find(' ');
     std::string to_put;

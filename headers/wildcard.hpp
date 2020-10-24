@@ -25,7 +25,7 @@ namespace stlplus
 {
 
   // wild = the wildcard expression
-  // match = the string to test against that expression
+  // match = the string to init_var_by_pipe against that expression
   // e.g. wildcard("[a-f]*", "fred") returns true
   bool wildcard(const std::string& wild, const std::string& match);
 

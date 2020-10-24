@@ -7,6 +7,7 @@
 #include <readline/history.h>
 #include <boost/filesystem.hpp>
 #include <sys/wait.h>
+#include <iostream>
 
 #define MAX_PATH 128
 extern BuiltIns builtIns;
@@ -64,6 +65,18 @@ int main(int argc, char **argv) {
         close(stdin_copy);
         close(stderr_copy);
 
+
+        for (auto &p: pipes) {
+            if ((close(p.first) == -1)) {
+                std::cerr << "Closing pipe" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            if ((close(p.second) == -1)) {
+                std::cerr << "Closing pipe" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
         if (status != 0)
             for (int st : statuses) {
                 if (waitpid(st, &status, 0) == -1)

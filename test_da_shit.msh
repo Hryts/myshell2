@@ -23,8 +23,8 @@ grep my < file_norm
 mecho 'Testing pipe'
 ls | grep "abc" | wc
 
-mecho 'Testing pipe & red'
-ls | grep "abc" | wc >res.txt 2>&1 &
+#mecho 'Testing pipe & red'
+#ls | grep "abc" | wc > res.txt 2>&1 &
 
 mecho 'Testing var'
 a=$(mecho pas_loh)

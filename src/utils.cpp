@@ -79,7 +79,6 @@ void redirect(std::vector<std::string> &inp) {
 
 
 static std::pair<bool, int> check_for_builtins(std::vector<std::string> &args) {
-    redirect(args);
     myFunc cmd;
     int status;
     if ((cmd = builtIns.get_func(args[0])) != nullptr) {

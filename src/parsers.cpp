@@ -14,7 +14,6 @@
 namespace fs = std::filesystem;
 
 
-
 void wildcard(std::string &path, std::vector<std::string> &args) {
     int added = 0;
     if (fs::exists(fs::path(path).parent_path())) {
@@ -70,7 +69,7 @@ std::pair<bool, bool> parse_input(const char *inp,
         if (to_put == "|" && !temp.empty()) {
             args.push_back(std::move(temp));
             temp.clear();
-        } else if (to_put.find_first_not_of(' ') != std::string::npos)
+        } else if (to_put.find_first_not_of(' ') != std::string::npos && to_put != "&")
             wildcard(to_put, temp);
         initialPos = pos + 1;
         pos = input.find(' ', initialPos);

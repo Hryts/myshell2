@@ -8,6 +8,7 @@
 #include "../headers/wildcard.hpp"
 #include <unistd.h>
 #include <functional>
+#include <sys/wait.h>
 #include "../headers/builtins.h"
 
 namespace fs = std::filesystem;
@@ -70,6 +71,17 @@ void wildcard(std::string &path, std::vector<std::string> &args) {
     } else { args.emplace_back(path); }
 }
 
+void def_behaviour(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
+    int status = 0;
+    for (int i=0; i<std::stoi(p_a[0]); i++) {
+        if (wait(&status) == -1)
+            exit(EXIT_FAILURE);
+    }
+}
+
+void bg_exec_behaviour(const std::vector<std::string> &p_a, std::vector<std::pair<int, int>> &_pipes) {
+    signal(SIGCHLD,SIG_IGN);
+}
 
 void parse_input(const char *inp,
                  std::vector<std::vector<std::string>> &args,
@@ -122,7 +134,9 @@ void parse_input(const char *inp,
     }
     to_put = input.substr(initialPos, std::min(pos, input.size()) - initialPos + 1);
 
-    if (to_put.find_first_not_of(' ') != std::string::npos)
+    if(to_put == "&"){
+        parent_function = bg_exec_behaviour;
+    } else if (to_put.find_first_not_of(' ') != std::string::npos)
         wildcard(to_put, temp);
 
 
